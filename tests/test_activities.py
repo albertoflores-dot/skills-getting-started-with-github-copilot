@@ -1,11 +1,26 @@
+from copy import deepcopy
+
+import pytest
 from fastapi.testclient import TestClient
 
-from src.app import app
+from src import app as app_module
+
+
+ORIGINAL_ACTIVITIES = deepcopy(app_module.activities)
+
+
+@pytest.fixture(autouse=True)
+def reset_activities():
+    app_module.activities.clear()
+    app_module.activities.update(deepcopy(ORIGINAL_ACTIVITIES))
+    yield
+    app_module.activities.clear()
+    app_module.activities.update(deepcopy(ORIGINAL_ACTIVITIES))
 
 
 def test_successful_signup_adds_participant_to_activity():
     # Arrange
-    client = TestClient(app)
+    client = TestClient(app_module.app)
     activity_name = "Chess Club"
     email = "newstudent@mergington.edu"
 
@@ -25,7 +40,7 @@ def test_successful_signup_adds_participant_to_activity():
 
 def test_duplicate_signup_returns_400():
     # Arrange
-    client = TestClient(app)
+    client = TestClient(app_module.app)
     activity_name = "Chess Club"
     email = "duplicate@mergington.edu"
 
@@ -47,7 +62,7 @@ def test_duplicate_signup_returns_400():
 
 def test_unregister_participant_removes_email_from_activity():
     # Arrange
-    client = TestClient(app)
+    client = TestClient(app_module.app)
     activity_name = "Chess Club"
     email = "remove-me@mergington.edu"
     client.post(
@@ -71,7 +86,7 @@ def test_unregister_participant_removes_email_from_activity():
 
 def test_unregister_missing_participant_returns_400():
     # Arrange
-    client = TestClient(app)
+    client = TestClient(app_module.app)
     activity_name = "Chess Club"
     email = "not-registered@mergington.edu"
 
